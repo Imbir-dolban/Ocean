@@ -22,5 +22,5 @@
 *Взял — открой код.*
 ---
 Разработано в рамках **South Ocean Project**.  
-Автор: Imbir (tg: @Dibilyshka)
+Автор: Imbir (tg: @CeIeron)
 
