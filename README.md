@@ -17,9 +17,6 @@ gcc main.c -o calc
 
 # Ocean Kernel Calculator (RPN)
 
-A low-level C calculator kernel using the reverse Polish notation (RPN) principle. Developed within the **Ocean** project ecosystem.
-
-
 ### ⚠️ Project Status
 * **Version:** Beta v1.0
 * **Interface Language:** RU (Transliterated for console output)
