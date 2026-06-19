@@ -22,10 +22,7 @@ A low-level C calculator kernel using the reverse Polish notation (RPN) principl
 * **Version:** Beta v1.0
 * **Interface Language:** RU (Transliterated for console output)
 
-### 🚀 Kernel Features
-* Uses a fixed-size stack with overflow protection.
-* High calculation accuracy thanks to the transition to the `double` data type.
-* Built-in division-by-zero checking (`E: na 0 / nelzua`).
+### To start .c file
 
 ### 🛠 Building and Running
 To compile on Linux Mint (or any other system with GCC), run the following in a terminal:
