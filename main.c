@@ -59,7 +59,7 @@ int main() {
                 b = pop();
                 a = pop();
                 if (b == 0.0) {
-                    printf("E: na 0 / nelzua\n");
+                    printf("E: you can't divide by zero\n");
                     push(a);
                     push(b);
                 } else {
