@@ -14,7 +14,6 @@
 gcc main.c -o calc
 ./calc
 
-
 # Ocean Kernel Calculator (RPN)
 
 ### ⚠️ Project Status
