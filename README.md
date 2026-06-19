@@ -18,7 +18,7 @@ gcc main.c -o calc
 # Ocean Kernel Calculator (RPN)
 
 ### ⚠️ Project Status
-* **Version:** Beta v1.0
+* **Version:** Beta v2.0
 * **Interface Language:** RU (Transliterated for console output)
 
 ### To start .c file
