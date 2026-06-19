@@ -5,7 +5,7 @@ int top = 0;
 
 void push(double value) { //Функция push
 	if (top >= STACK_SIZE) {
-		printf("Ошибка: МК ушел в защиту!\n");
+		printf("E: mc went on the defensive\n");
 		return;
 	}
 	stack[top] = value;
@@ -13,7 +13,7 @@ void push(double value) { //Функция push
 }
 double pop() {
 	if (top == 0) {
-	     printf("E: Стек пуст!\n");
+	     printf("E: stack is empty\n");
 	     return 0.0;
 	}
 	top--;
@@ -24,7 +24,7 @@ int main() {
 	double a,b;
 
 	printf("--Ocean Kernel Calculator--\n");
-	printf("Vvedite operator\n");
+	printf("enter operator\n");
 
 	while(1) {
 	    printf("> ");
