@@ -10,7 +10,6 @@
 
 ### 🛠 Сборка и запуск
 Для компиляции в Linux Mint (или любой другой системе с GCC) выполните в терминале:
-```bash
 gcc main.c -o calc
 ./calc
 
@@ -24,6 +23,5 @@ gcc main.c -o calc
 
 ### 🛠 Building and Running
 To compile on Linux Mint (or any other system with GCC), run the following in a terminal:
-```bash
 gcc main.c -o calc
 ./calc
