@@ -1,82 +1,64 @@
-#include <stdio.h>
 #define STACK_SIZE 15
-double stack[STACK_SIZE];
+#define VIDEO_MEMORY (char*)0xB8000
+#define SCREEN_WIDTH 80
+
+int stack[STACK_SIZE];
 int top = 0;
+int cursor_pos = 0;
 
-void push(double value) { //Функция push
-	if (top >= STACK_SIZE) {
-		printf("E: mc went on the defensive\n");
-		return;
-	}
-	stack[top] = value;
-	top++;
-}
-double pop() {
-	if (top == 0) {
-	     printf("E: stack is empty\n");
-	     return 0.0;
-	}
-	top--;
-	return stack[top];
-}
-int main() {
-	char input[20];
-	double a,b;
-
-	printf("--Ocean Kernel Calculator--\n");
-	printf("enter operator\n");
-
-	while(1) {
-	    printf("> ");
-	    if (scanf("%s", input) == -1) break;
-
-	    // плюс
-	    if (input[0] == '+' && input[1] == '\0') {
-		b = pop();
-		a = pop();
-		push(a + b);
-		printf("result: %lf\n", stack[top - 1]);
-           } 
-
-	   // минус
-           else if (input[0] == '-' && input[1] == '\0') {
-                b = pop();
-                a = pop();
-                push(a-b);
-                printf("result: %lf\n", stack[top - 1]);
-          }
-
-          // умножение
-          else if (input[0] == '*' && input[1] == '\0') {
-                b = pop();
-                a = pop();
-                push(a*b);
-                printf("result: %lf\n", stack[top - 1]);
-          }
-
-         // деление
-         else if (input[0] == '/' && input[1] == '\0') {
-                b = pop();
-                a = pop();
-                if (b == 0.0) {
-                    printf("E: you can't divide by zero\n");
-                    push(a);
-                    push(b);
-                } else {
-                    push(a / b);
-                    printf("result: %lf\n", stack[top - 1]);
-                }
-
-        }
-        // если это собственно число
-        else {
-            double value;
-            if (sscanf(input, "%lf", &value) == 1) {
-                push(value);
-            } else {
-                printf("E: unknown command\n");
-            }
-        }
+// Очистка экрана и вывод символа напрямую в видеопамять VGA
+void print_char(char c) {
+    if (c == '\n') {
+        // Перевод строки: прыгаем на начало следующей строки экрана
+        cursor_pos = ((cursor_pos / (SCREEN_WIDTH * 2)) + 1) * (SCREEN_WIDTH * 2);
+        return;
     }
-    return 0;
+    
+    VIDEO_MEMORY[cursor_pos] = c;       // Сам символ
+    VIDEO_MEMORY[cursor_pos + 1] = 0x07; // Цвет: белый текст на черном фоне
+    cursor_pos += 2;
+}
+
+// Печать целой строки
+void print_string(const char* str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        print_char(str[i]);
     }
+}
+
+void push(int value) {
+    if (top >= STACK_SIZE) {
+        print_string("E: mc went on the defensive\n");
+        return;
+    }
+    stack[top] = value;
+    top++;
+}
+
+int pop() {
+    if (top == 0) {
+         print_string("E: stack is empty\n");
+         return 0;
+    }
+    top--;
+    return stack[top];
+}
+
+// точка входа
+void _start() {
+    // Очищаем экран (заполняем пробелами)
+    cursor_pos = 0;
+    for(int i = 0; i < 80 * 25 * 2; i += 2) {
+        VIDEO_MEMORY[i] = ' ';
+        VIDEO_MEMORY[i+1] = 0x07;
+    }
+
+    print_string("-- Ocean Kernel Calculator --\n");
+    print_string("Status: Bare-metal active.\n");
+    print_string("> ");
+
+    // Вечный цикл, чтобы процессор не ушел в ребут
+    while(1) {
+        // Тут должен быть опрос портов клавиатуры, но пока просто стоим
+    }
+}
