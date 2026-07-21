@@ -54,7 +54,7 @@ void _start() {
     }
 
     print_string("-- Ocean Kernel Calculator --\n");
-    print_string("Status: Bare-metal active.\n");
+    print_string("Status: active.\n");
     print_string("> ");
 
     // Вечный цикл, чтобы процессор не ушел в ребут
