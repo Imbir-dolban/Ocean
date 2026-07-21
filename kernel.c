@@ -2,7 +2,7 @@
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
-// === БАЗОВЫЕ СТРОКОВЫЕ ФУНКЦИИ (без stdlib.h) ===
+// === БАЗОВЫЕ СТРОКОВЫЕ ФУНКЦИИ ===
 int strlen(const char* s) {
     int len = 0;
     while (s[len]) len++;
@@ -92,7 +92,7 @@ void print_int(int num) {
 }
 
 
-// === СТЭК ДЛЯ ОПЗ ===
+// === СТЕК ДЛЯ ОПЗ ===
 int stack[100];
 int top = 0;
 int rpn_error = 0; // 0 - OK, 1 - Overflow, 2 - Underflow
@@ -297,7 +297,7 @@ int fs_rm(const char* name) {
 }
 
 
-// === ИНТЕРПРЕТАТОР КОМАНД (ШЕЛЛ) ===
+// === ИНТЕРПРЕТАТОР КОМАНД (SHELL) ===
 void process_command(char* cmd_buf) {
     print_string("\n"); // Переход на новую строку после ввода команды
     
