@@ -1,6 +1,10 @@
-name: Build OceanOS ISO
+name: Build Ocean ISO
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -9,6 +13,9 @@ jobs:
       image: debian:bookworm-slim
 
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Install minimal build tools
       run: |
         apt-get update && apt-get install -y --no-install-recommends \
@@ -21,9 +28,6 @@ jobs:
           xorriso \
           mtools \
           ca-certificates
-
-    - name: Checkout repository
-      uses: actions/checkout@v4
 
     - name: Run build script
       run: |
