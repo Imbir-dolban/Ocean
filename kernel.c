@@ -2,7 +2,7 @@
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
-// === БАЗОВЫЕ СТРОКОВЫЕ ФУНКЦИИ ===
+// === БАЗОВЫЕ СТРОКОВЫЕ ФУНКЦИИ (без stdlib.h) ===
 int strlen(const char* s) {
     int len = 0;
     while (s[len]) len++;
@@ -92,7 +92,7 @@ void print_int(int num) {
 }
 
 
-// === СТЕК ДЛЯ ОПЗ ===
+// === СТЭК ДЛЯ ОПЗ ===
 int stack[100];
 int top = 0;
 int rpn_error = 0; // 0 - OK, 1 - Overflow, 2 - Underflow
@@ -297,7 +297,7 @@ int fs_rm(const char* name) {
 }
 
 
-// === ИНТЕРПРЕТАТОР КОМАНД (SHELL) ===
+// === ИНТЕРПРЕТАТОР КОМАНД (ШЕЛЛ) ===
 void process_command(char* cmd_buf) {
     print_string("\n"); // Переход на новую строку после ввода команды
     
@@ -443,42 +443,35 @@ void _start_c() {
 
     char input_buf[64];
     int buf_idx = 0;
-    unsigned char last_scancode = 0;
 
     while (1) {
-        unsigned char scancode = inb(0x60);
+        // Проверяем бит 0 в порту 0x64: есть ли новый скан-код в буфере?
+        if (inb(0x64) & 1) {
+            unsigned char scancode = inb(0x60);
 
-        if (scancode < 0x80) { // Make-код (нажатие клавиши)
-            if (scancode != last_scancode) {
-                if (scancode < 128) { 
-                    char c = scancode_to_ascii[scancode];
+            // Обрабатываем только нажатия клавиш (Make-коды)
+            if (scancode < 0x80) { 
+                char c = scancode_to_ascii[scancode];
 
-                    if (c != 0) {
-                        if (c == '\n') {
-                            input_buf[buf_idx] = '\0';
-                            process_command(input_buf);
-                            buf_idx = 0; // Очищаем буфер
-                        } 
-                        else if (c == '\b') {
-                            if (buf_idx > 0) {
-                                buf_idx--;
-                                print_char(c);
-                            }
-                        } 
-                        else {
-                            if (buf_idx < 63) {
-                                input_buf[buf_idx++] = c;
-                                print_char(c);
-                            }
+                if (c != 0) {
+                    if (c == '\n') {
+                        input_buf[buf_idx] = '\0';
+                        process_command(input_buf);
+                        buf_idx = 0; // Очищаем буфер
+                    } 
+                    else if (c == '\b') {
+                        if (buf_idx > 0) {
+                            buf_idx--;
+                            print_char(c);
+                        }
+                    } 
+                    else {
+                        if (buf_idx < 63) {
+                            input_buf[buf_idx++] = c;
+                            print_char(c);
                         }
                     }
                 }
-                last_scancode = scancode; // Обновляем состояние только для нажатий
-            }
-        } else { // Break-код (отпускание клавиши, scancode >= 0x80)
-            unsigned char released_make = scancode & 0x7F; // Вычисляем соответствующий Make-код
-            if (released_make == last_scancode) {
-                last_scancode = 0; // Сбрасываем блокировку для повторного нажатия этой же клавиши
             }
         }
     }
