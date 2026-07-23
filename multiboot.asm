@@ -1,17 +1,27 @@
-bits 32
+[bits 32]
+
+section .multiboot
+align 4
+    dd 0x1BADB002            ; Magic number
+    dd 0x00                  ; Flags
+    dd - (0x1BADB002 + 0x00) ; Checksum
+
+section .bss
+align 16
+stack_bottom:
+    resb 16384               ; Выделяем 16 КБ под стек
+stack_top:
+
 section .text
 global _start
 extern _start_c
 
 _start:
-        jmp real_start           ; Прыгаем мимо заголовка на код запуска
-        
-        align 4                  ; Выравнивание по 4 байта (требование Multiboot)
-        dd 0x1BADB002            ; Магическое число
-        dd 0x00                  ; Флаги
-        dd - (0x1BADB002 + 0x00) ; Контрольная сумма
+    cli                      ; Выключаем прерывания
+    mov esp, stack_top       ; Устанавливаем указатель стека на вершину!
+    
+    call _start_c            ; Передаем управление в Си
 
-real_start:
-        cli                      ; Выключаем прерывания
-        call _start_c            ; Улетаем в С
-        hlt                      ; Если С вернул управление тушим процессор
+.loop:
+    hlt                      ; Если Си каким-то образом завершился — спим
+    jmp .loop
