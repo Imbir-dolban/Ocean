@@ -2,7 +2,7 @@
 echo "=== Компиляция Ассемблера ==="
 nasm -f elf32 multiboot.asm -o multiboot.o
 
-echo "=== Компиляция Си ==="
+echo "=== Компиляция C ==="
 gcc -m32 -march=i386 -ffreestanding -nostdlib -nodefaultlibs -c kernel.c -o kernel.o
 
 echo "=== Линковка ==="
