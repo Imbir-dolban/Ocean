@@ -1,0 +1,42 @@
+name: Build Ocean ISO
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm-slim
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install minimal build tools
+      run: |
+        apt-get update && apt-get install -y --no-install-recommends \
+          git \
+          gcc \
+          gcc-multilib \
+          binutils \
+          nasm \
+          grub-pc-bin \
+          xorriso \
+          mtools \
+          ca-certificates
+
+    - name: Run build script
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Upload ISO artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: OceanOS-ISO
+        path: "*.iso"
+        
