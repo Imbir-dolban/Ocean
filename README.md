@@ -3,7 +3,7 @@
 Низкоуровневое ядро калькулятора на Си, работающее по принципу обратной польской записи (ОПЗ/RPN). Разрабатывается в рамках экосистемы проектов **Ocean**.
 
 ### ⚠️ Статус проекта
-* **Версия:** Beta v2.0 уже в .iso файле 
+* **Версия:** Beta v3.0 уже в .iso файле 
 * **Язык интерфейса:** RU (Транслит для вывода в консоль)
 
 ### Для запуска main.c файла!
@@ -16,7 +16,7 @@ gcc main.c -o calc
 # Ocean Kernel Calculator (RPN)
 
 ### ⚠️ Project Status
-* **Version:** Beta v2.0
+* **Version:** Beta v3.0
 * **Interface Language:** RU (Transliterated for console output)
 
 ### To start .c file
