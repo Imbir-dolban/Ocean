@@ -71,8 +71,7 @@ void terminal_scroll(void) {
         }
     }
     vga_clear_line(SCREEN_HEIGHT - 1);
-    cursor_pos = (SCREEN_HEIGHT - 1) * SCREEN_WIDTH;
-}
+    if (cursor_pos >= SCREEN_WIDTH) cursor_pos -= SCREEN_WIDTH;
 
 void terminal_putchar(char c) {
     if (c == '\n') {
@@ -133,7 +132,16 @@ void itoa(int num, char* buf, int base) {
     char tmp[32];
     int i = 0, neg = 0;
     if (num == 0) { buf[0] = '0'; buf[1] = '\0'; return; }
-    if (num < 0 && base == 10) { neg = 1; num = -num; }
+    unsigned int uval;
+
+if (num < 0 && base == 10) {
+    buf[0] = '-';
+    buf++; // Сдвигаем указатель буфера на 1 символ вперед для минуса
+    uval = (unsigned int)(-(long)num); // Безопасно переводим в модуль без переполнения
+} else {
+    uval = (unsigned int)num;
+}
+
     while (num > 0) {
         int rem = num % base;
         tmp[i++] = (rem > 9) ? (rem - 10 + 'A') : (rem + '0');
@@ -312,7 +320,10 @@ static const char scancode_to_ascii[128] = {
 
 char keyboard_getchar(void) {
     // Ждем, пока бит 0 в порту 0x64 не станет 1 (данные готовы)
-    while ((inb(0x64) & 1) == 0);
+    while ((inb(0x64) & 1) == 0) {
+    __asm__ __volatile__("pause");
+}
+
     uint8_t scancode = inb(0x60);
     
     // Игнорируем отпускание клавиш (break codes >= 0x80) и расширенные коды (E0)
