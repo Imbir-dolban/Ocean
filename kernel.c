@@ -429,7 +429,7 @@ void process_command(char* cmd_buf) {
 // ============================================================
 // KERNEL ENTRY POINT
 // ============================================================
-void kernel_main(void) {
+void _start_c(void) {
     cursor_pos = 0;
     for (size_t i = 0; i < SCREEN_SIZE; i++) {
         VIDEO_MEMORY[i] = (VGA_COLOR_WHITE_ON_BLACK << 8) | ' ';
