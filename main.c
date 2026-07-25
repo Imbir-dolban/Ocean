@@ -56,7 +56,10 @@ void terminal_scroll(void) {
     }
     vga_clear_line(SCREEN_HEIGHT - 1);
 
-    cursor_pos = (SCREEN_HEIGHT - 1) * SCREEN_WIDTH;
+    // Исправлено: корректное уменьшение позиции курсора на одну строку
+    if (cursor_pos >= SCREEN_WIDTH) {
+        cursor_pos -= SCREEN_WIDTH;
+    }
 }
 
 void terminal_putchar(char c) {
@@ -94,7 +97,7 @@ void itoa(int val, char* buf, int base) {
     if (val < 0 && base == 10) {
         buf[0] = '-';
         buf++; // Сдвигаем буфер
-        uval = (unsigned int)(-((long)val)); 
+        uval = (unsigned int)(-(long)val); 
     } else {
         uval = (unsigned int)val;
     }
@@ -160,7 +163,7 @@ void run_rpn(const char* input) {
                 }
                 if (rpn_error) { terminal_writestring("Error: Stack Overflow\n"); return; }
             }
-            // Игнорируем неизвестные символы молча (или можно ругаться)
+            // Игнорируем неизвестные символы молча
         }
     }
 
@@ -203,8 +206,9 @@ static bool shift_pressed = false;
 
 char keyboard_getchar(void) {
     // Ждем данные в буфере контроллера (порт 0x64, бит 0)
-    while ((inb(0x64) & 1) == 0);
-         __asm__ __volatile__("pause");
+    // Исправлена синтаксическая ошибка со скобками
+    while ((inb(0x64) & 1) == 0) {
+        __asm__ __volatile__("pause");
     }
     uint8_t sc = inb(0x60);
 
