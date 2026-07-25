@@ -20,6 +20,60 @@
 #define VGA_COLOR_WHITE_ON_BLACK 0x07
 
 // ============================================================
+// STRING UTILS (Объявлены первыми, чтобы их видели все функции ниже)
+// ============================================================
+size_t strlen(const char* s) {
+    size_t len = 0;
+    while (s[len]) len++;
+    return len;
+}
+
+int strcmp(const char* s1, const char* s2) {
+    while (*s1 && (*s1 == *s2)) { s1++; s2++; }
+    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+}
+
+int strncmp(const char* s1, const char* s2, size_t n) {
+    while (n-- && *s1 && (*s1 == *s2)) { s1++; s2++; }
+    return (n == (size_t)-1) ? 0 : (*(const unsigned char*)s1 - *(const unsigned char*)s2);
+}
+
+void strcpy(char* dest, const char* src) {
+    while ((*dest++ = *src++));
+}
+
+void strncpy_safe(char* dest, const char* src, size_t dest_size) {
+    size_t i = 0;
+    for (; i < dest_size - 1 && src[i]; i++) dest[i] = src[i];
+    dest[i] = '\0';
+}
+
+void itoa(int num, char* buf, int base) {
+    char tmp[32];
+    int i = 0;
+    unsigned int uval;
+
+    if (num == 0) { buf[0] = '0'; buf[1] = '\0'; return; }
+
+    if (num < 0 && base == 10) {
+        buf[0] = '-';
+        buf++;
+        uval = (unsigned int)(-(long)num);
+    } else {
+        uval = (unsigned int)num;
+    }
+
+    while (uval > 0) {
+        int rem = uval % base;
+        tmp[i++] = (rem > 9) ? (rem - 10 + 'A') : (rem + '0');
+        uval /= base;
+    }
+
+    for (int j = 0; j < i; j++) buf[j] = tmp[i - 1 - j];
+    buf[i] = '\0';
+}
+
+// ============================================================
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 // ============================================================
 static size_t cursor_pos = 0; // Позиция в ячейках (0..SCREEN_SIZE-1)
@@ -72,7 +126,6 @@ void terminal_scroll(void) {
     }
     vga_clear_line(SCREEN_HEIGHT - 1);
     
-    // Исправлено: корректный сдвиг позиции курсора на одну строку назад
     if (cursor_pos >= SCREEN_WIDTH) {
         cursor_pos -= SCREEN_WIDTH;
     }
@@ -102,61 +155,6 @@ void terminal_write(const char* data, size_t len) {
 
 void terminal_writestring(const char* str) {
     terminal_write(str, strlen(str));
-}
-
-// ============================================================
-// STRING UTILS
-// ============================================================
-size_t strlen(const char* s) {
-    size_t len = 0;
-    while (s[len]) len++;
-    return len;
-}
-
-int strcmp(const char* s1, const char* s2) {
-    while (*s1 && (*s1 == *s2)) { s1++; s2++; }
-    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
-}
-
-int strncmp(const char* s1, const char* s2, size_t n) {
-    while (n-- && *s1 && (*s1 == *s2)) { s1++; s2++; }
-    return (n == (size_t)-1) ? 0 : (*(const unsigned char*)s1 - *(const unsigned char*)s2);
-}
-
-void strcpy(char* dest, const char* src) {
-    while ((*dest++ = *src++));
-}
-
-void strncpy_safe(char* dest, const char* src, size_t dest_size) {
-    size_t i = 0;
-    for (; i < dest_size - 1 && src[i]; i++) dest[i] = src[i];
-    dest[i] = '\0';
-}
-
-void itoa(int num, char* buf, int base) {
-    char tmp[32];
-    int i = 0;
-    unsigned int uval;
-
-    if (num == 0) { buf[0] = '0'; buf[1] = '\0'; return; }
-
-    // Исправлено: защита от UB / переполнения INT_MIN
-    if (num < 0 && base == 10) {
-        buf[0] = '-';
-        buf++;
-        uval = (unsigned int)(-(long)num);
-    } else {
-        uval = (unsigned int)num;
-    }
-
-    while (uval > 0) {
-        int rem = uval % base;
-        tmp[i++] = (rem > 9) ? (rem - 10 + 'A') : (rem + '0');
-        uval /= base;
-    }
-
-    for (int j = 0; j < i; j++) buf[j] = tmp[i - 1 - j];
-    buf[i] = '\0';
 }
 
 // ============================================================
@@ -326,13 +324,11 @@ static const char scancode_to_ascii[128] = {
 };
 
 char keyboard_getchar(void) {
-    // Исправлено: добавление pause для снижения нагрузки на CPU
     while ((inb(0x64) & 1) == 0) {
         __asm__ __volatile__("pause");
     }
     uint8_t scancode = inb(0x60);
     
-    // Игнорируем отпускание клавиш (break codes >= 0x80) и расширенные коды (E0)
     if (scancode >= 0x80) return 0;
     
     return scancode_to_ascii[scancode];
@@ -346,12 +342,11 @@ void print_prompt(void) {
 }
 
 void process_command(char* cmd_buf) {
-    terminal_putchar('\n'); // Новая строка после ввода
+    terminal_putchar('\n');
     
     size_t len = strlen(cmd_buf);
     if (len == 0) { print_prompt(); return; }
 
-    // Парсинг: команда до первого пробела
     size_t cmd_end = 0;
     while (cmd_buf[cmd_end] != ' ' && cmd_buf[cmd_end] != '\0') cmd_end++;
 
@@ -361,7 +356,7 @@ void process_command(char* cmd_buf) {
     command[copy_len] = '\0';
 
     char* args = &cmd_buf[cmd_end];
-    while (*args == ' ') args++; // Пропуск пробелов
+    while (*args == ' ') args++;
 
     if (strcmp(command, "help") == 0) {
         terminal_writestring("Commands:\n");
@@ -405,7 +400,6 @@ void process_command(char* cmd_buf) {
         if (name_end == 0 || args[name_end] == '\0') {
             terminal_writestring("Usage: write [filename] [text]\n");
         } else {
-            // Исправлено: извлечение только имени файла до пробела
             char fname[MAX_FILENAME];
             size_t i = 0;
             for (; i < name_end && i < MAX_FILENAME - 1; i++) fname[i] = args[i];
@@ -433,30 +427,26 @@ void process_command(char* cmd_buf) {
 }
 
 // ============================================================
-// KERNEL ENTRY POINT (Called from boot.s)
+// KERNEL ENTRY POINT
 // ============================================================
 void kernel_main(void) {
-    // 1. Очистка экрана
     cursor_pos = 0;
     for (size_t i = 0; i < SCREEN_SIZE; i++) {
         VIDEO_MEMORY[i] = (VGA_COLOR_WHITE_ON_BLACK << 8) | ' ';
     }
 
-    // 2. Инициализация подсистем
     fs_init();
 
-    // 3. Приветствие
     terminal_writestring("-- Ocean Kernel Terminal OS --\n");
     terminal_writestring("Type 'help' to see available commands.\n");
     print_prompt();
 
-    // 4. Основной цикл ввода
     char input_buf[INPUT_BUF_SIZE];
     size_t buf_idx = 0;
 
     while (1) {
         char c = keyboard_getchar();
-        if (c == 0) continue; // Игнорируем непечатные/break codes
+        if (c == 0) continue;
 
         if (c == '\n') {
             input_buf[buf_idx] = '\0';
@@ -466,7 +456,7 @@ void kernel_main(void) {
         else if (c == '\b') {
             if (buf_idx > 0) {
                 buf_idx--;
-                terminal_putchar('\b'); // Визуальное удаление
+                terminal_putchar('\b');
             }
         } 
         else {
