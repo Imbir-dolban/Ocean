@@ -55,6 +55,7 @@ void terminal_scroll(void) {
         }
     }
     vga_clear_line(SCREEN_HEIGHT - 1);
+
     cursor_pos = (SCREEN_HEIGHT - 1) * SCREEN_WIDTH;
 }
 
@@ -84,13 +85,28 @@ void terminal_writestring(const char* s) {
 size_t strlen(const char* s) { size_t l=0; while(s[l]) l++; return l; }
 
 void itoa(int val, char* buf, int base) {
-    char tmp[32]; int i=0, neg=0;
-    if (val == 0) { buf[0]='0'; buf[1]=0; return; }
-    if (val < 0 && base==10) { neg=1; val=-val; }
-    while (val) { int r=val%base; tmp[i++]=(r>9)?'A'+r-10:'0'+r; val/=base; }
-    if (neg) tmp[i++]='-';
-    for (int j=0; j<i; j++) buf[j]=tmp[i-1-j];
-    buf[i]=0;
+    char tmp[32]; 
+    int i = 0; 
+    unsigned int uval;
+
+    if (val == 0) { buf[0] = '0'; buf[1] = 0; return; }
+
+    if (val < 0 && base == 10) {
+        buf[0] = '-';
+        buf++; // Сдвигаем буфер
+        uval = (unsigned int)(-((long)val)); 
+    } else {
+        uval = (unsigned int)val;
+    }
+
+    while (uval) { 
+        int r = uval % base; 
+        tmp[i++] = (r > 9) ? 'A' + r - 10 : '0' + r; 
+        uval /= base; 
+    }
+
+    for (int j = 0; j < i; j++) buf[j] = tmp[i - 1 - j];
+    buf[i] = 0;
 }
 
 // ============================================================
@@ -188,6 +204,8 @@ static bool shift_pressed = false;
 char keyboard_getchar(void) {
     // Ждем данные в буфере контроллера (порт 0x64, бит 0)
     while ((inb(0x64) & 1) == 0);
+         __asm__ __volatile__("pause");
+    }
     uint8_t sc = inb(0x60);
 
     // Break code (отпускание) — старший бит 1
