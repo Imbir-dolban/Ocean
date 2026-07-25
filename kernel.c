@@ -71,7 +71,12 @@ void terminal_scroll(void) {
         }
     }
     vga_clear_line(SCREEN_HEIGHT - 1);
-    if (cursor_pos >= SCREEN_WIDTH) cursor_pos -= SCREEN_WIDTH;
+    
+    // Исправлено: корректный сдвиг позиции курсора на одну строку назад
+    if (cursor_pos >= SCREEN_WIDTH) {
+        cursor_pos -= SCREEN_WIDTH;
+    }
+}
 
 void terminal_putchar(char c) {
     if (c == '\n') {
@@ -130,24 +135,26 @@ void strncpy_safe(char* dest, const char* src, size_t dest_size) {
 
 void itoa(int num, char* buf, int base) {
     char tmp[32];
-    int i = 0, neg = 0;
-    if (num == 0) { buf[0] = '0'; buf[1] = '\0'; return; }
+    int i = 0;
     unsigned int uval;
 
-if (num < 0 && base == 10) {
-    buf[0] = '-';
-    buf++; // Сдвигаем указатель буфера на 1 символ вперед для минуса
-    uval = (unsigned int)(-(long)num); // Безопасно переводим в модуль без переполнения
-} else {
-    uval = (unsigned int)num;
-}
+    if (num == 0) { buf[0] = '0'; buf[1] = '\0'; return; }
 
-    while (num > 0) {
-        int rem = num % base;
-        tmp[i++] = (rem > 9) ? (rem - 10 + 'A') : (rem + '0');
-        num /= base;
+    // Исправлено: защита от UB / переполнения INT_MIN
+    if (num < 0 && base == 10) {
+        buf[0] = '-';
+        buf++;
+        uval = (unsigned int)(-(long)num);
+    } else {
+        uval = (unsigned int)num;
     }
-    if (neg) tmp[i++] = '-';
+
+    while (uval > 0) {
+        int rem = uval % base;
+        tmp[i++] = (rem > 9) ? (rem - 10 + 'A') : (rem + '0');
+        uval /= base;
+    }
+
     for (int j = 0; j < i; j++) buf[j] = tmp[i - 1 - j];
     buf[i] = '\0';
 }
@@ -319,11 +326,10 @@ static const char scancode_to_ascii[128] = {
 };
 
 char keyboard_getchar(void) {
-    // Ждем, пока бит 0 в порту 0x64 не станет 1 (данные готовы)
+    // Исправлено: добавление pause для снижения нагрузки на CPU
     while ((inb(0x64) & 1) == 0) {
-    __asm__ __volatile__("pause");
-}
-
+        __asm__ __volatile__("pause");
+    }
     uint8_t scancode = inb(0x60);
     
     // Игнорируем отпускание клавиш (break codes >= 0x80) и расширенные коды (E0)
@@ -399,8 +405,12 @@ void process_command(char* cmd_buf) {
         if (name_end == 0 || args[name_end] == '\0') {
             terminal_writestring("Usage: write [filename] [text]\n");
         } else {
+            // Исправлено: извлечение только имени файла до пробела
             char fname[MAX_FILENAME];
-            strncpy_safe(fname, args, MAX_FILENAME);
+            size_t i = 0;
+            for (; i < name_end && i < MAX_FILENAME - 1; i++) fname[i] = args[i];
+            fname[i] = '\0';
+
             char* text = &args[name_end];
             while (*text == ' ') text++;
             
