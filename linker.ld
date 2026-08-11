@@ -7,7 +7,7 @@ SECTIONS
     .text BLOCK(4K) : ALIGN(4K)
     {
         *(.multiboot)   /* Multiboot header MUST be first */
-        *(.text)        /* Код (boot.s, kernel.c) */
+        *(.text)        /* Код (multiboot.asm, kernel.c) */
     }
 
     .rodata BLOCK(4K) : ALIGN(4K)
