@@ -1,6 +1,6 @@
 # Компилятор и флаги для i386 bare metal
 CC = i686-elf-gcc
-AS = i686-elf-as
+AS = nasm
 LD = i686-elf-ld
 
 # Получаем короткий хэш коммита из Git (если repo инициализирован)
@@ -16,8 +16,8 @@ LDFLAGS = -m elf_i386 -T linker.ld -nostdlib
 KERNEL = kernel.elf
 ISO = os.iso
 
-# Выбери актуальные объектники (kernel.o или main.o)
-OBJS = boot.o kernel.o
+# Используем multiboot.asm вместо boot.s
+OBJS = multiboot.o kernel.o
 
 all: $(ISO)
 
@@ -39,9 +39,9 @@ $(KERNEL): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Ассемблер
-boot.o: boot.s
-	$(AS) --32 $< -o $@
+# Ассемблер NASM для .asm файлов
+multiboot.o: multiboot.asm
+	nasm -f elf32 $< -o $@
 
 # Запуск в QEMU
 run: $(ISO)
