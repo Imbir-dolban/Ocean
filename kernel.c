@@ -1,9 +1,10 @@
-// kernel.c
+// kernel.c - Ocean Kernel
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 // ============================================================
-// КОНСТАНТЫ И ТИПЫ
+// КОНСТАНТЫ
 // ============================================================
 #define VIDEO_MEMORY ((volatile uint16_t*)0xB8000)
 #define SCREEN_WIDTH 80
@@ -13,14 +14,32 @@
 #define MAX_FILES 10
 #define MAX_FILENAME 16
 #define MAX_FILE_SIZE 128
-#define INPUT_BUF_SIZE 64
+#define INPUT_BUF_SIZE 128
 #define CMD_MAX_LEN 16
 #define RPN_STACK_SIZE 100
 
 #define VGA_COLOR_WHITE_ON_BLACK 0x07
 
 // ============================================================
-// STRING UTILS (Объявлены первыми, чтобы их видели все функции ниже)
+// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+// ============================================================
+static size_t cursor_pos = 0;
+
+typedef struct {
+    char name[MAX_FILENAME];
+    char content[MAX_FILE_SIZE];
+    size_t size;
+    int used;
+} File;
+
+static File files[MAX_FILES];
+
+static int rpn_stack[RPN_STACK_SIZE];
+static int rpn_top = 0;
+static int rpn_error = 0;
+
+// ============================================================
+// STRING UTILS
 // ============================================================
 size_t strlen(const char* s) {
     size_t len = 0;
@@ -31,11 +50,6 @@ size_t strlen(const char* s) {
 int strcmp(const char* s1, const char* s2) {
     while (*s1 && (*s1 == *s2)) { s1++; s2++; }
     return *(const unsigned char*)s1 - *(const unsigned char*)s2;
-}
-
-int strncmp(const char* s1, const char* s2, size_t n) {
-    while (n-- && *s1 && (*s1 == *s2)) { s1++; s2++; }
-    return (n == (size_t)-1) ? 0 : (*(const unsigned char*)s1 - *(const unsigned char*)s2);
 }
 
 void strcpy(char* dest, const char* src) {
@@ -52,12 +66,16 @@ void itoa(int num, char* buf, int base) {
     char tmp[32];
     int i = 0;
     unsigned int uval;
+    int negative = 0;
 
-    if (num == 0) { buf[0] = '0'; buf[1] = '\0'; return; }
+    if (num == 0) { 
+        buf[0] = '0'; 
+        buf[1] = '\0'; 
+        return; 
+    }
 
     if (num < 0 && base == 10) {
-        buf[0] = '-';
-        buf++;
+        negative = 1;
         uval = (unsigned int)(-(long)num);
     } else {
         uval = (unsigned int)num;
@@ -69,27 +87,14 @@ void itoa(int num, char* buf, int base) {
         uval /= base;
     }
 
+    if (negative) {
+        buf[0] = '-';
+        buf++;
+    }
+
     for (int j = 0; j < i; j++) buf[j] = tmp[i - 1 - j];
     buf[i] = '\0';
 }
-
-// ============================================================
-// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
-// ============================================================
-static size_t cursor_pos = 0; // Позиция в ячейках (0..SCREEN_SIZE-1)
-
-typedef struct {
-    char name[MAX_FILENAME];
-    char content[MAX_FILE_SIZE];
-    size_t size;
-    int used;
-} File;
-
-static File files[MAX_FILES];
-
-static int rpn_stack[RPN_STACK_SIZE];
-static int rpn_top = 0;
-static int rpn_error = 0; // 0=OK, 1=Overflow, 2=Underflow, 3=DivZero
 
 // ============================================================
 // LOW-LEVEL I/O
@@ -98,10 +103,6 @@ static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
     __asm__ __volatile__("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
-}
-
-static inline void outb(uint16_t port, uint8_t val) {
-    __asm__ __volatile__("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
 // ============================================================
@@ -429,7 +430,7 @@ void process_command(char* cmd_buf) {
 // ============================================================
 // KERNEL ENTRY POINT
 // ============================================================
-void _start_c(void) {
+void kernel_main(void) {
     cursor_pos = 0;
     for (size_t i = 0; i < SCREEN_SIZE; i++) {
         VIDEO_MEMORY[i] = (VGA_COLOR_WHITE_ON_BLACK << 8) | ' ';
